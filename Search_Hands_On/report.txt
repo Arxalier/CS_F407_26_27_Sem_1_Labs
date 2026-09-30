@@ -1,0 +1,48 @@
+1. your formulation of the search problem;
+2. your design of the agent;
+3. the final Python program;
+4. the prompts used with the LLM;
+5. the results of your tests;
+6. the BFS/A* comparison;
+7. your heuristic investigation;
+8. answers to the reflection questions.
+
+1) - State Space: 2D integer coordinates (r, c) on an M x N grid representing the 
+  robot's current location in the warehouse.
+- Initial State: The designated loading coordinate marked 'S' at (1, 1).
+- Goal State: The delivery coordinate marked 'G' at (1, 19).
+- Actions: 4 cardinal movements: {Up (-1, 0), Down (+1, 0), Left (0, -1), Right (0, +1)}.
+- Transition Model: An action is valid if the destination cell (nr, nc) is within 
+  bounds and does not collide with a shelf/obstacle ('#').
+- Path Cost: Step cost is 1 per transition. Total path cost equals number of moves.
+- Heuristic: Manhattan distance h(n) = |r_n - r_G| + |c_n - c_G|, which is admissible for grid movement without diagonal steps.
+
+2)
+- Architecture: Goal-based search agent implemented in the `WarehouseSolver` class.
+- Frontier & Explored Tracking:
+  * BFS uses a FIFO queue (`collections.deque`) and a visited set.
+  * DFS uses a LIFO stack (`list`) and visited set.
+  * Greedy and A* use a min-heap priority queue (`heapq`) with tie-breaker counters.
+- Cost Tracking: A* tracks `g_cost[node]` to record the shortest known distance 
+  from start, pushing `f(n) = g(n) + h(n)` into the min-heap.
+- Path Reconstruction: A dictionary of parent pointers maps each visited state 
+  to its predecessor, backtracked upon reaching 'G'.
+- Interface: Terminal UI renders the ASCII grid with '*' overlaying the chosen trajectory.
+
+3) Refer to soln.py
+
+4) 1. "Can you convert soln.cpp in Agents_Hands_On to Python?"
+2. "Why is Search_Hands_On not working? I got a rogue process via wsl, where I can't open the window anymore but it is still there"
+3. "Can you fix soln.py yourself. The gui must work."
+4. "It still does not work. The window does not open."
+5. "Can you make it UI only? Just remove all tkinter from it."
+
+5, 6) Refer to answers_to_questions
+
+7) If heuristic function becomes 0, A* turns into Dijkstra's algorithm (aka Uniform-Cost Search). Since step costs are 1, it behaves like a BFS.
+If heuristic becomes Euclidean distance, our heuristic is still admissible (because euclidean distance <= manhattan distance for any two points)
+However, we may expand more states since the heuristic is now lesser to the actual distance than it was before (while still being admissible)
+If manhattan_dist*2 is taken as the heuristic, it will no longer be admissible (e.g. S = {1,0}, T = {2,0}) gives a wrong heuristic (above the actual distance). 
+This will give an overly greedy behaviour, likely finding a less optimal path.
+
+8) Refer to answers_to_questions

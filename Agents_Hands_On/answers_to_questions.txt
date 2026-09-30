@@ -1,0 +1,12 @@
+Before writing any software, check that you can answer the following questions.
+1. What is the environment?
+2. What is the goal of the agent?
+3. What actions are available to the agent?
+4. What information must the agent maintain in order to choose its next action?
+5. Why is this an example of a goal-based agent rather than a simple reflex agent?
+
+1. The environment is a nxm grid, consisting of walls and free spaces.
+2. The goal of the agent is to find the shortest path from the start state to the end state (S and G respectively)
+3. The agent can execute the following actions: {Move left, Move up, Move right, Move down} whenever valid (not walking into a wall)
+4. The agent needs to know its coordinates
+5. A simple reflex agent has a predetermined input/output mapping. This agent is goal-based because it is adaptive to its environment without hardcoded rules, and it uses search methods to optimise for a parameter (length of distance travelled).

@@ -1,0 +1,220 @@
+Logic_Hands_On
+Answers:
+
+TASK 0: UNDERSTAND THE PLANNING PROBLEM
+(note: this was asked to be done by us, I used an llm and verified its answer (time constraint))
+(a) Initial State I:
+    I = { At(Robot, A), At(Package, A) }
+
+(b) Goal G:
+    G = { At(Package, C) }
+
+(c) Actions Available to the Robot:
+    - Move(from, to) between connected locations (A-B, B-A, B-C, C-B)
+    - PickUp(Package, loc) for loc in {A, B, C}
+    - Drop(Package, loc) for loc in {A, B, C}
+
+(d) Preconditions and Effects for Each Action:
+    1. Move(Robot, X, Y):
+       - Preconditions: { At(Robot, X) }
+       - Positive Effects: { At(Robot, Y) }
+       - Negative Effects: { At(Robot, X) }
+
+    2. PickUp(Package, X):
+       - Preconditions: { At(Robot, X), At(Package, X) }
+       - Positive Effects: { Holding(Package) }
+       - Negative Effects: { At(Package, X) }
+
+    3. Drop(Package, X):
+       - Preconditions: { At(Robot, X), Holding(Package) }
+       - Positive Effects: { At(Package, X) }
+       - Negative Effects: { Holding(Package) }
+
+Question:
+- Is PickUp(Package, A) applicable from I?
+  Answer: YES.
+  Explanation: The preconditions of PickUp(Package, A) are { At(Robot, A), At(Package, A) }.
+  Both propositions are present in I ({ At(Robot, A), At(Package, A) }).
+  Thus, I |= Preconditions(PickUp(Package, A)).
+
+- Is Drop(Package, C) applicable from I?
+  Answer: NO.
+  Explanation: The preconditions of Drop(Package, C) are { At(Robot, C), Holding(Package) }.
+  Neither proposition is present in I (Robot is at A, not C, and the robot is not holding the package).
+  Since I |/= Preconditions(Drop(Package, C)), the action is invalid and cannot be executed.
+
+
+Merely having an action in the domain definition does not mean it can be executed.
+
+TASK 1: CONSTRUCT A PLAN BY HAND
+
+1. PickUp(Package, A)
+2. Move(Robot, A, B)
+3. Move(Robot, B, C)
+4. Drop(Package, C)
+
+State|Facts in State
+S0   |At(Robot, A), At(Package, A)
+S1   |At(Robot, A), Holding(Package)
+S2   |At(Robot, B), Holding(Package)
+S3   |At(Robot, C), Holding(Package)
+S4   |At(Robot, C), At(Package, C)
+
+S4 |= G
+
+
+TASK 2: ASK AN LLM TO IMPLEMENT THE PLANNER
+Mapping Specification to planner.py:
+- Preconditions (When is an action applicable?):
+  Appears in `Action.is_applicable(state)`:
+  `self.pos_pre.issubset(state) and self.neg_pre.isdisjoint(state)`
+- Effects (How does the state change?):
+  Appears in `Action.apply(state)`:
+  `(state - self.neg_eff) | self.pos_eff`
+- Goal (When does planning terminate?):
+  Appears in `goal.issubset(state)`: returns the plan and state trace immediately.
+- BFS (How are alternative plans explored?):
+  Appears in `bfs_plan()` using a FIFO queue (`collections.deque`) maintaining
+  `(state, plan, trace)` and a `visited` set of frozensets to prevent cycles.
+
+planner.py vlidates the plan
+
+TASK 3: TEST THE GENERATED PLANNER
+Test A: Solvable Problem
+- Initial State: { At(Robot, A), At(Package, A) }
+- Goal: { At(Package, C) }
+- Plan Found: Yes
+- Resulting Plan:
+    1. PickUp(Package, A)
+    2. Move(Robot, A, B)
+    3. Move(Robot, B, C)
+    4. Drop(Package, C)
+- Plan Valid: Yes, all preconditions verified at each step; reaches goal state in 4 steps.
+
+Test B: Impossible Problem (PickUp action removed)
+- Initial State: { At(Robot, A), At(Package, A) }
+- Goal: { At(Package, C) }
+- Plan Found: No ("No plan found" reported cleanly)
+- Resulting Plan: None
+- Plan Valid: Yes (correct failure detection without hallucinating or inventing actions).
+
+Test C: Irrelevant Actions
+- Initial State: { At(Robot, A), At(Package, A) }
+- Goal: { At(Robot, C) }  [Robot reaches C, Package remains at A]
+- Plan Found: Yes
+- Resulting Plan:
+    1. Move(Robot, A, B)
+    2. Move(Robot, B, C)
+- Plan Valid: Yes. Confirms the planner does not conflate Robot reaching C with Package reaching C.
+  In Test A, the package position in S4 is At(Package, C), whereas in Test C, the package remains At(Package, A).
+
+
+
+TASK 4: LOGIC AND SEARCH
+
+Complete Flow Diagram:
+Current state
+    ↓
+Check action preconditions
+    ↓
+Filter applicable actions (this is the logical part, whether an action is even allowed)
+    ↓
+Generate successor state (also part of logic)
+    ↓
+Search over alternatives
+    ↓
+Goal?
+
+How Logical Reasoning and Search Work Together:
+- Logic determines what is possible in a single step 
+- Search determines which sequences of steps we could try
+
+Logic defines the valid transitions and Search navigates through them to satisfy the goal.
+
+TASK 5: CAN THE LLM VERIFY ITS OWN PLAN?
+Question:
+Which should you trust more:
+(a) the LLM’s explanation;
+(b) the independently executed state transitions?
+
+ans is b
+
+SECTION 5: REFLECTION QUESTIONS
+1. Why is it useful to specify action preconditions and effects before asking an LLM to write the planner?
+   Answer: Providing them precisely constrains the LLM's code generation, preventing ambiguous
+   state modeling (or incorrect ones)
+
+2. Give an example of an error that could occur if the planner failed to check an action's preconditions.
+   Answer: The robot could execute Drop(Package, C) while at location A without holding the
+   package, or execute Move(Robot, B, C) when the robot is actually at A. These are not valid.
+
+3. Why is a plan that "looks reasonable" not necessarily a valid plan?
+   Answer: Natural language plausibility does not guarantee logical consistency. One good example is omitting obvious but necessary steps, like picking up a package.
+
+4. What did the LLM contribute to the implementation?
+   Answer: The LLM rapidly scaffolded the Python STRIPS architecture, implementing data structures
+   (classes, frozensets), the BFS queue traversal logic, state transition functions, and test cases.
+
+5. What did you have to verify independently?
+   Answer: 
+   That the positive and negative effects (and preconditions) were correctly modelled. State transitions correctly handled these 3.
+   Also the bfs implementation had to be checked.
+
+6. In this laboratory, where is logical reasoning being used?
+   Answer: Logical reasoning is used in:
+   Recall that logic is just checking of validity and management of state during a search.
+   So things checked were: State |= Preconditions(Action), 
+   finding successor states, checking that State |= Goal
+
+7. How is planning related to the search algorithms studied in the previous module?
+   Planning IS graph search. In the previous module, states were explicit coordinates (r, c)
+   on a physical grid. In planning, states are combinatorial sets of logical propositions, and edges
+   are action applications. Both use algorithms like BFS to find the shortest path from initial state to goal.
+
+    We simply extend our state space (and prune it via logic), searching over valid (and often informed) paths.
+
+SECTION 7: OPTIONAL EXTENSION – PROLOG AS A LOGICAL VERIFIER
+Task 6:
+%
+% (a) Why does Prolog return true for can move(a,b)?
+% Because it is given as a predicate.
+% can_move(a,b) :- connected(a,b)
+% since connected(a,b), can_move(a,b)
+%
+% (b) Why does it not establish can move(a,c)?
+% Because can_move(a,c) can not infer connected(a,c)
+% There is no line to add new predicates, or call the predicate recursively.
+%
+% (c) What is the relationship between the Prolog rule can move(X,Y) and the logical
+% implication
+% Connected(X, Y ) → CanMove(X, Y )?
+% The prolog rule is equivalent to the given implication
+
+Task 7: Checking Proposed Plan Movements
+- `?- valid_move(a,b).` -> true (directly connected)
+- `?- valid_move(b,c).` -> true (directly connected)
+- `?- valid_move(a,c).` -> false (not directly connected; catches invalid teleports)
+
+Task 8: Chained Rules
+Program:
+    wet_road.
+    slippery :- wet_road.
+    reduce_speed :- slippery.
+Query: ?- reduce_speed.
+Why it succeeds: Prolog uses backward chaining (resolution). To prove `reduce_speed`, it must prove
+`slippery`. To prove `slippery`, it must prove `wet_road`. `wet_road` is a known fact, so the query succeeds.
+Sequence of Implications:
+    Fact(wet_road) => Rule(wet_road -> slippery) => Rule(slippery -> reduce_speed) => Conclusion(reduce_speed)
+
+7.2 Reflection Questions:
+1. Difference between a Prolog fact and a Prolog rule:
+   A fact is an unconditional ground assertion (always true, e.g. `connected(a,b).`), whereas a rule
+   is a conditional Horn clause with preconditions (`Head :- Body.`), true only when its body is satisfied.
+2. How does a Prolog query correspond to asking whether something follows from a KB?
+   A query `?- Q.` asks whether the knowledge base logically entails Q (KB |= Q) via resolution.
+3. Why might it be useful to use Prolog to verify a plan generated by Python?
+   It decouples plan generation (search heuristic/heuristic Python) from plan validation (declarative
+   formal logic). A bug in the Python state representation cannot compromise the independent Prolog proof.
+4. What advantage does an independent verifier provide when the plan was generated with an LLM?
+   LLMs can hallucinate plausible-looking but physically impossible actions (e.g. moving between non-connected
+   nodes). An independent formal verifier guarantees soundness without trusting the LLM blindly.

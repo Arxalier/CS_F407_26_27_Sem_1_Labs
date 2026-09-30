@@ -1,0 +1,59 @@
+Answers to Questions:
+
+(a) What information is necessary to specify a state?
+(b) What makes an action invalid?
+(c) Is this a deterministic search problem?
+
+a) We need current coordinates to specify a state
+b) If an action takes the current coordinates out of bounds, or places the coordinates at a '#' position
+c) Yes, the search is deterministic. 
+d) A solution is any valid path from source to destination (a sequence of coordinates)
+
+(a) What data structure is used for the A* frontier?
+(b) How does the program select the next state to expand?
+(c) Where is the heuristic calculated?
+(d) Does the program explicitly calculate f(n) = g(n) + h(n)?
+(e) How does the program prevent unnecessary repeated exploration?
+
+a) A minheap is used to store the frontier (similar to Dijkstra's algorithm)
+b) The program finds the state with minimum heuristic distance
+c) In line 207, in the snippet (self.manhattan(nxt, self.goal), nxt)
+d) In astar(), f_cost = new_g + self.manhattan(nxt, self.goal)
+e) By using a dijkstra-like approach, and through the proof of correctness of A*, when a node is first explored (stepped into), we're guaranteed to have found the shortest path, given no negative edge weights.
+
+Measure             BFS         A*
+Solution found      Yes         Yes
+Path length         20          20
+States expanded     59          23
+
+
+(a) Did both algorithms find a solution?
+(b) Did they find paths of the same length?
+(c) Which algorithm expanded fewer states?
+(d) Why might A* expand fewer states?
+
+a) Yes, both BFS and A* found a solution
+b) Yes, both found a minimal path length of 20 steps.
+c) A* expanded fewer states than BFS
+d) A* uses an informed search via Manhattan distance heuristic, whereas BFS performs a blind search
+
+Reflect on the use of the LLM as an engineering assistant.
+Answer the following questions.
+1. What parts of the generated code were correct immediately?
+2. Did you find any bugs or design problems?
+3. How did you discover those problems?
+4. Did the LLM use terminology or data structures that you did not understand?
+5. Did you modify the LLM-generated code?
+6. Which tests were most useful?
+7. Could you have trusted the program without testing it?
+8. What did you understand about A* that you did not understand before implementing it?
+
+
+a) The search algorithms themselves were correctly implemented. The LLM struggled to correctly implement the program with tkinter.
+b) Yes, I faced a bug where the tkinter window did not open. So I had to scrap it.
+c) By testing the LLM generated code instead of seeing its claimed result.
+d) No for terminology, yes for data structures because I am not proficient in Python heap datastructures.
+e) No
+f) Manual testing
+g) No
+8) That is it pretty much Dijkstra, with the only change being that instead of the minheap sorting by minimum total distance, it sorts by minimum expected distance (heuristic+already travelled)
