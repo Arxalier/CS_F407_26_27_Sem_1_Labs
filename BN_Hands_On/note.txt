@@ -1,0 +1,155 @@
+BN Lab (30/09/26)
+Q1. Using the chain rule, P(X1, . . . , X6) = P(X1)P(X2 | X1)P(X3 | X1, X2) × P(X4 | X1, X2, X3)P(X5 | X1, . . . , X4) × P(X6 | X1, . . . , X5). This is an autoregressive decomposition. 
+Question 1 Why is this decomposition useful for generating text? Write a short explanation in your lab record. 
+
+=> Using a Bayesian Network, we can identify the conditional probabilities for each of these terms from the above expression. Using this, we can repeatedly find the maximum probability token (represented by X_i) to generate strings. 
+
+P(X1, X2, X3, X4) = P(X1)P(X2 | X1)P(X3 | X2)P(X4 | X3). This is a first-order Markov language model. 
+Q2. What independence assumption is being made by this network? Express your answer using probability notation. 
+
+=> The assumption made is that the current token depends only on the previous token. This is also known as a bigram.
+P(Xi,X_i+1,X_i+2,....,Xj) = P(X_i) P(X_i+1|X_i) P(X_i+2|X_i+1) … P(X_j | X_j-1)
+
+Q3. Prompt used:
+Write a simple Python implementation of a first-order autoregressive language model. The model should: 1. take a list of tokenised sentences as training data; 2. count transitions between consecutive tokens; 3. construct the conditional distribution P(Xt | Xt−1); 4. display the probabilities for a specified previous token; 5. predict the most probable next token; 6. generate a sentence by repeatedly sampling the next token; 7. stop when the token is generated. Do not use a machine-learning library or a pretrained language model. Use ordinary Python data structures and random sampling. 
+8. Please continue from this starter code:
+D = """
+the cat sat on the mat
+the cat sat on the rug
+the dog sat on the mat
+the dog ran to the park
+the cat ran to the park
+the dog sat on the rug
+"""
+tokens = ["<START>", "<END>"] + list(set(D.split()))
+print(tokens)
+
+=>
+import random
+from collections import defaultdict, Counter
+
+
+D = """
+the cat sat on the mat
+the cat sat on the rug
+the dog sat on the mat
+the dog ran to the park
+the cat ran to the park
+the dog sat on the rug
+"""
+tokens = ["", ""] + list(set(D.split()))
+print(f"Vocabulary: {tokens}\n")
+
+
+# 1. Take a list of tokenized sentences as training data
+# We split by line, then by word, and wrap each sentence with  and
+raw_sentences = [line.strip().split() for line in D.strip().split('\n') if line.strip()]
+training_data = [[""] + sentence + [""] for sentence in raw_sentences]
+
+
+# 2. Count transitions between consecutive tokens
+# We'll use a nested dictionary where transitions[current][next] = count
+transitions = defaultdict(Counter)
+
+
+for sentence in training_data:
+    # Iterate through pairs of consecutive tokens
+    for i in range(len(sentence) - 1):
+        current_token = sentence[i]
+        next_token = sentence[i + 1]
+        transitions[current_token][next_token] += 1
+
+
+# 3. Construct the conditional distribution P(Xt | Xt-1)
+probabilities = defaultdict(dict)
+
+
+for current_token, next_tokens in transitions.items():
+    total_transitions = sum(next_tokens.values())
+    for next_token, count in next_tokens.items():
+        # P(Next | Current) = Count(Current -> Next) / Total transitions from Current
+        probabilities[current_token][next_token] = count / total_transitions
+
+
+# 4. Display the probabilities for a specified previous token
+def show_probabilities(prev_token):
+    print(f"P(X_t | X_t-1 = '{prev_token}'):")
+    if prev_token not in probabilities:
+        print("  Token not found in history.")
+        return
+   
+    for next_token, prob in probabilities[prev_token].items():
+        print(f"  {next_token}: {prob:.4f}")
+
+
+# 5. Predict the most probable next token (Greedy / Argmax)
+def predict_most_probable(prev_token):
+    if prev_token not in probabilities:
+        return None
+    # Find the token with the highest probability value
+    best_token = max(probabilities[prev_token].items(), key=lambda x: x[1])[0]
+    return best_token
+
+
+# 6 & 7. Generate a sentence by repeatedly sampling, stopping at
+def generate_sentence():
+    current_token = ""
+    generated_tokens = []
+   
+    while True:
+        # Get the possible next tokens and their corresponding probabilities
+        next_choices = list(probabilities[current_token].keys())
+        weights = list(probabilities[current_token].values())
+       
+        # Sample the next token based on the calculated distribution
+        next_token = random.choices(next_choices, weights=weights, k=1)[0]
+       
+        # 7. Stop when the  token is generated
+        if next_token == "":
+            break
+           
+        generated_tokens.append(next_token)
+        current_token = next_token
+       
+    return " ".join(generated_tokens)
+
+
+# --- Demonstrating the functionality ---
+
+
+# Show distribution for a specific token
+show_probabilities("the")
+print()
+
+
+show_probabilities("cat")
+print()
+
+
+# Predict highest probability next token
+prev = "sat"
+best_next = predict_most_probable(prev)
+print(f"Most probable token after '{prev}': '{best_next}'\n")
+
+
+# Generate a few random sentences
+print("Generated sentences:")
+for i in range(5):
+    print(f"{i+1}. {generate_sentence()}")
+
+Q4. Where in the program are the transition counts stored? 
+Probabilities[][] stores the counts followed by dividing them with the total number of transitions.
+
+Q5. Where is P(Xt | Xt−1) computed? 
+        probabilities[current_token][next_token] = count / total_transitions
+
+Q6. How does the program choose the next word? Is it: 1. always choosing the most probable word, or 2. sampling from the probability distribution? Explain the difference. 
+It greedily chooses the most probable word instead of sampling
+def predict_most_probable(prev_token):
+    if prev_token not in probabilities:
+        return None
+    # Find the token with the highest probability value
+    best_token = max(probabilities[prev_token].items(), key=lambda x: x[1])[0]
+    return best_token
+
+
