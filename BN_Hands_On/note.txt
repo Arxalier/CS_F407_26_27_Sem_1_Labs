@@ -152,4 +152,99 @@ def predict_most_probable(prev_token):
     best_token = max(probabilities[prev_token].items(), key=lambda x: x[1])[0]
     return best_token
 
+Q7. What happens if the program encounters a word for which no transition has been observed?
+If the model generates strings from scratch, this wouldn't occur at all. But if we give some user input, with a prev_token never seen before, then this will happen:
+in generate_sentence(), we'd be calling random.choices() on an empty distribution, because such a token is not known. So it will give runtime error;
+In predict_most_probable(), None is returned.
+
+With the help of an LLM to generate such a script, the probabilities for the next word prediction for each word sums up to 1.
+Question 8
+If one of the totals is 0.87, what does this tell you about the implementation?
+Well, it would be wrong.
+
+Q9.
+Are the most probable predictions always the same as the words that you would personally
+expect?
+What does this tell you about the difference between:
+a probability model
+and
+human linguistic expectations?
+
+
+not always. training on a corpus which is slightly unusual and bias the model towards learning suboptimal next tokens, which is not something one would expect in human language.
+a probability model is thus just a statistically most likely string based on training data, but human language is influenced by thoughts and patterns of words being used together as well as semantics behind these words.
+
+
+Question 10
+Compare the two sets of generated sentences.
+Which mode produces more variation?
+Why?
+
+Sampling will generate more variation, because greedy method is purely deterministic.
+
+Q11.
+How does the second-order model differ from the first-order model in terms of:
+1. the graph structure?
+2. the conditional probability table?
+3. the amount of context available for prediction?
+4. the amount of data needed?
+
+1. each node can have 2 parents
+2. 3d matrix of probability
+3. context window is now of 2 words
+4. exponentially more training data. from n^2 to n^3.
+
+Question 12
+Why does increasing the amount of context potentially improve prediction?
+Why can it simultaneously make the model harder to estimate from limited data?
+Relate your answer to the size of the conditional probability table.
+
+->
+Using single-order, we'd get sentences like "the cat sat on the cat sat on the cat..."
+the cat sat on the dog ran to the ...
+With second-order, we get:
+the cat sat on the mat, the dog sat on the rug, etc.
+
+Now, greedy generation does not get stuck in a loop because the context of two words does not repeat.
+Because of longer context, the sampling is more coherent which feels like a better prediction.
+
+It is harder to estimate data since we have more fields to calculate from the same data.
+
+
+The final part of the laboratory concerns the use of the LLM itself.
+Consider the following two approaches.
+Approach A
+“Write a Python language model for me.”
+Approach B
+“Implement the following probabilistic model: P(Xt
+| Xt−1), estimated from transition counts, with sampling-based generation.”
+Question 13
+Why is Approach B preferable when constructing an intelligent system?
+Discuss the importance of:
+• specifying the intended behaviour;
+• understanding the representation;
+• validating the generated implementation;
+• testing probabilistic invariants;
+• distinguishing implementation from model.
+
+1. It is a good practice to do so, because LLMs should be seen as a tool and not the master. We should still have fine-grained control over what we want, instead of being told what we should want when an LLM generates code without user direction.
+2. It is important to know at least a high level idea of how the code works.
+3. It is important. An LLM can be asked to generate tests and explain how its code covers all edge cases, so we can be certain. LLMs are at the end of the day, probabilistic models.
+4. We did a check that the probabilities of next word should sum up to 1. This is also very important because it is a necessary condition for our code being correct.
+5. It is important to distinguish implementation from model because the implementation is a deterministic output program from a non-deterministic model. It is a way of expressing the model's ideas in certainty, free of natural language ambiguity.
+
+Question 14
+What did thinking of the language model as a Bayesian network give you?
+Discuss at least three of the following:
+• a representation of dependencies;
+P(x1,x2,...xn) = product of all P(Xt | Parents(Xt))
+Thus, an impossibly large task becomes a local frequency count-based task.
+• a factorisation of the joint distribution;
+• a way of interpreting conditional probabilities;
+• a principled method for generation;
+sentence generation is done by sampling from a DAG (BN). This also ensures we draw unbiased samples as an added benefit.
+• a way to reason about independence assumptions;
+• a way to understand the effect of increasing context;
+• a way to test whether an implementation matches its probabilistic specification.
+We can add external checker scripts to check probability invariants to ensure correctness of logic.
 
