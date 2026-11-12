@@ -53,21 +53,39 @@ y = {
 25
 
 
-Task 3: Tabular Q-Learning Implementation
-- Script: q_learning.py
-- Environment: 5x5 grid, obstacles at (0,2), (1,2), (3,2), (4,2). Start: (2,0), Goal: (2,4)
-- Actions: 0: Up, 1: Down, 2: Left, 3: Right, 4: Wait
-- Parameters: alpha = 0.2, gamma = 0.95, seed = 7, episodes = 1500
-- Epsilon decay: 1.0 -> 0.05 over first 1200 episodes
-- Cutoff: 40 steps (truncation flag bootstraps with max Q(s', a'))
-- Result: Optimal path of 4 steps (Right, Right, Right, Right) with return 9.70
+Task 3
+q_learning.py
+alpha = 0.2, gamma = 0.95, seed = 7
+1500 episodes, eps 1.0 -> 0.05 over 1200 eps
+40 step cutoff, bootstraps on truncation
+Result: 4 steps (Right, Right, Right, Right), reward = 9.70
 
+Task 4
+Env tests:
+(0,0) + up -> hits wall, stays (0,0), r = -1, term = False
+(1,1) + right -> obstacle at (1,2), stays (1,1), r = -1, term = False
+(2,1) + right -> door at (2,2), r = -0.1, term = False
+(2,1) + wait -> stays (2,1), r = -0.1, term = False
+(2,3) + right -> goal at (2,4), r = +10, term = True
+40 steps test -> truncated = True, terminated = False
 
-Task 3: Tabular Q-Learning Implementation
-- Script: q_learning.py
-- Environment: 5x5 grid, obstacles at (0,2), (1,2), (3,2), (4,2). Start: (2,0), Goal: (2,4)
-- Actions: 0: Up, 1: Down, 2: Left, 3: Right, 4: Wait
-- Parameters: alpha = 0.2, gamma = 0.95, seed = 7, episodes = 1500
-- Epsilon decay: 1.0 -> 0.05 over first 1200 episodes
-- Cutoff: 40 steps (truncation flag bootstraps with max Q(s', a'))
-- Result: Optimal path of 4 steps (Right, Right, Right, Right) with return 9.70
+Hand calculation for Q update:
+Q(s,a) = 0.4, r = 1, max Q(s',a') = 2, alpha = 0.2, gamma = 0.95
+y = 1 + 0.95 * 2 = 2.9
+Q(s,a) = 0.4 + 0.2 * (2.9 - 0.4) = 0.90
+
+Terminal with r = 5:
+y = 5 (no gamma term)
+Q(s,a) = 0.4 + 0.2 * (5 - 0.4) = 1.32
+
+Truncation case:
+Uses continuation term r + gamma * max Q (bootstraps).
+Only true goal termination ignores next state, truncation does not.
+
+Code mapping:
+- State & action: ACTIONS, pos_to_state (lines 7-10)
+- Reward & termination: WarehouseEnv.step (lines 25-36)
+- Epsilon-greedy: epsilon_greedy (lines 39-43)
+- TD target & update: q_learning_update (lines 46-50)
+- Train & eval: train_q_learning, evaluate_greedy (lines 53-99)
+
