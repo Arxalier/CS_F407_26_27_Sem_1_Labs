@@ -1,0 +1,73 @@
+5.1
+
+State: 
+Coordinates (row,column), 21 states
+
+Actions:
+Up, Down, Left, Right, Wait
+
+Transition Rule:
+Wait action can always be performed
+Up, Down, Left, Right can be performed if the robot does not move into an obstace, or outside the grid
+
+Reward:
+The robot reaches its goal +10
+The robot attempts an obstacle or boundary move −1
+Any other valid action, including waiting −0.1
+
+Initial state: (2,0)
+
+Terminal Outcome: 
+(2,4) if goal state is reached
+40 moves achieved
+
+a) Rows, Columns
+b) Markov property of not needing former states
+c) All moves are deterministic
+d) Straight line
+e) 
+
+Task 2
+1) grid, robot
+2) reset takes us back to starting position, step performs an action
+Iteration: One episode
+Reset: go back to (2,0). 
+Step: Transition Rule
+
+Q-table
+(25 x 5)
+Row number = 5r+c
+5 columns - different actions each
+Q(s,a) <- Q(s,a) + alpha*(y-Q(s,a))
+y = {
+    r, if transition terminates
+    r + gamma * max_a'[Q(s', a')] otherwise
+}
+
+0
+1
+2
+.
+.
+.
+25
+
+
+Task 3: Tabular Q-Learning Implementation
+- Script: q_learning.py
+- Environment: 5x5 grid, obstacles at (0,2), (1,2), (3,2), (4,2). Start: (2,0), Goal: (2,4)
+- Actions: 0: Up, 1: Down, 2: Left, 3: Right, 4: Wait
+- Parameters: alpha = 0.2, gamma = 0.95, seed = 7, episodes = 1500
+- Epsilon decay: 1.0 -> 0.05 over first 1200 episodes
+- Cutoff: 40 steps (truncation flag bootstraps with max Q(s', a'))
+- Result: Optimal path of 4 steps (Right, Right, Right, Right) with return 9.70
+
+
+Task 3: Tabular Q-Learning Implementation
+- Script: q_learning.py
+- Environment: 5x5 grid, obstacles at (0,2), (1,2), (3,2), (4,2). Start: (2,0), Goal: (2,4)
+- Actions: 0: Up, 1: Down, 2: Left, 3: Right, 4: Wait
+- Parameters: alpha = 0.2, gamma = 0.95, seed = 7, episodes = 1500
+- Epsilon decay: 1.0 -> 0.05 over first 1200 episodes
+- Cutoff: 40 steps (truncation flag bootstraps with max Q(s', a'))
+- Result: Optimal path of 4 steps (Right, Right, Right, Right) with return 9.70
